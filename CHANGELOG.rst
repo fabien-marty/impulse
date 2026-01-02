@@ -1,6 +1,11 @@
 Changelog
 =========
 
+2.3 (not released yet)
+----------------------
+* Add --format option to control the output format.
+* Add --force-console option to force the use of the console output.
+
 2.2 (2025-12-12)
 ----------------
 
