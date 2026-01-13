@@ -64,6 +64,8 @@ There is currently only one command.
       --show-cycle-breakers  Identify a set of dependencies that, if removed,
                              would make the graph acyclic, and display them as
                              dashed lines.
+      --force-console        Force the use of the console output.
+      --format [html|dot]    Output format (default to html).
       --help                 Show this message and exit.
 
 Draw a graph of the dependencies within any installed Python package or subpackage.
@@ -120,3 +122,51 @@ within ``django.db.utils``.
 Here you can see that two of the dependencies are shown as a dashed line. If these dependencies were to be
 removed, the graph would be acyclic. To decide on the cycle breakers, Impulse uses the
 `nominate_cycle_breakers method provided by Grimp <https://grimp.readthedocs.io/en/stable/usage.html#ImportGraph.nominate_cycle_breakers>`_.
+
+Output formats
+**************
+
+By default, Impulse renders the graph as an interactive HTML page and opens it in your browser.
+You can change the output format using the ``--format`` option.
+
+**HTML format (default)**
+
+.. code-block:: text
+
+    impulse drawgraph django.db --format html
+
+Generates an HTML page with an interactive graph visualization, including download links for SVG and PNG.
+This is the default format when no ``--format`` option is specified.
+
+**DOT format**
+
+.. code-block:: text
+
+    impulse drawgraph django.db --format dot
+
+Outputs the graph in `DOT format <https://graphviz.org/doc/info/lang.html>`_, which can be used with
+Graphviz or other tools that support this format. This is useful for custom rendering or integration
+with other systems.
+
+For example, to generate a PNG using Graphviz:
+
+.. code-block:: text
+
+    impulse drawgraph django.db --format dot | dot -Tpng -o graph.png
+
+Redirecting output
+******************
+
+When you redirect the output to a file or pipe it to another command, Impulse automatically switches
+from opening a browser to printing to the console:
+
+.. code-block:: text
+
+    impulse drawgraph django.db > graph.html
+
+If you want to force console output even when running interactively (e.g., for scripting purposes),
+use the ``--force-console`` flag:
+
+.. code-block:: text
+
+    impulse drawgraph django.db --force-console
