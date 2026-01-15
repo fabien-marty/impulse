@@ -20,25 +20,31 @@ test:
 test-output-redirection:
     #!/usr/bin/env bash
     set -euo pipefail
+
+    # Create unique temporary files
+    html_output=$(mktemp --suffix=.html)
+    dot_output=$(mktemp --suffix=.dot)
+    force_console_output=$(mktemp --suffix=.html)
+    trap 'rm -f "$html_output" "$dot_output" "$force_console_output"' EXIT
+
     echo "Testing HTML output redirection..."
-    uv run impulse drawgraph grimp > /tmp/impulse_test_output.html
-    grep -q '<!DOCTYPE html>' /tmp/impulse_test_output.html
-    grep -q 'digraph' /tmp/impulse_test_output.html
+    uv run impulse drawgraph grimp > "$html_output"
+    grep -q '<!DOCTYPE html>' "$html_output"
+    grep -q 'digraph' "$html_output"
     echo "HTML output redirection: OK"
 
     echo "Testing DOT format output..."
-    uv run impulse drawgraph grimp --format=dot > /tmp/impulse_test_output.dot
-    grep -q 'digraph' /tmp/impulse_test_output.dot
+    uv run impulse drawgraph grimp --format=dot > "$dot_output"
+    grep -q 'digraph' "$dot_output"
     # DOT format should not contain HTML tags
-    grep -q '<!DOCTYPE html>' /tmp/impulse_test_output.dot && exit 1
+    ! grep -q '<!DOCTYPE html>' "$dot_output"
     echo "DOT format output: OK"
 
     echo "Testing --force-console flag..."
-    uv run impulse drawgraph grimp --force-console > /tmp/impulse_test_force_console.html
-    grep -q '<!DOCTYPE html>' /tmp/impulse_test_force_console.html
+    uv run impulse drawgraph grimp --force-console > "$force_console_output"
+    grep -q '<!DOCTYPE html>' "$force_console_output"
     echo "--force-console flag: OK"
 
-    rm -f /tmp/impulse_test_output.html /tmp/impulse_test_output.dot /tmp/impulse_test_force_console.html
     echo "All output redirection tests passed!"
 
 
