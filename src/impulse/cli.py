@@ -28,13 +28,13 @@ def main():
         "and display them as dashed lines."
     ),
 )
-@click.option("--force-console", is_flag=True, help="Force the use of the console output.")
 @click.option(
     "--format",
     type=click.Choice(["html", "dot"]),
     default="html",
     help="Output format (default to html).",
 )
+@click.option("--force-console", is_flag=True, help="Force the use of the console output.")
 @click.argument("module_name", type=str)
 def drawgraph(
     module_name: str,

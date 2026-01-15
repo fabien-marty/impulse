@@ -64,8 +64,8 @@ There is currently only one command.
       --show-cycle-breakers  Identify a set of dependencies that, if removed,
                              would make the graph acyclic, and display them as
                              dashed lines.
-      --force-console        Force the use of the console output.
       --format [html|dot]    Output format (default to html).
+      --force-console        Force the use of the console output.
       --help                 Show this message and exit.
 
 Draw a graph of the dependencies within any installed Python package or subpackage.
