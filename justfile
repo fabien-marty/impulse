@@ -21,10 +21,10 @@ test-output-redirection:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    # Create unique temporary files
-    html_output=$(mktemp --suffix=.html)
-    dot_output=$(mktemp --suffix=.dot)
-    force_console_output=$(mktemp --suffix=.html)
+    # Create unique temporary files (using -t for macOS compatibility)
+    html_output=$(mktemp -t impulse_test.XXXXXX.html)
+    dot_output=$(mktemp -t impulse_test.XXXXXX.dot)
+    force_console_output=$(mktemp -t impulse_test.XXXXXX.html)
     trap 'rm -f "$html_output" "$dot_output" "$force_console_output"' EXIT
 
     echo "Testing HTML output redirection..."
