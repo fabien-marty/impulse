@@ -14,6 +14,38 @@ test:
     @uv run --with=google-cloud-audit-log impulse drawgraph google.cloud.audit
     @uv run impulse drawgraph grimp --show-import-totals
     @uv run --with=django impulse drawgraph django.db --show-cycle-breakers
+    @just test-output-redirection
+
+# Test output redirection (HTML and DOT formats)
+test-output-redirection:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Create unique temporary files (using -t for macOS compatibility)
+    html_output=$(mktemp -t impulse_test.XXXXXX.html)
+    dot_output=$(mktemp -t impulse_test.XXXXXX.dot)
+    force_console_output=$(mktemp -t impulse_test.XXXXXX.html)
+    trap 'rm -f "$html_output" "$dot_output" "$force_console_output"' EXIT
+
+    echo "Testing HTML output redirection..."
+    uv run impulse drawgraph grimp > "$html_output"
+    grep -q '<!DOCTYPE html>' "$html_output"
+    grep -q 'digraph' "$html_output"
+    echo "HTML output redirection: OK"
+
+    echo "Testing DOT format output..."
+    uv run impulse drawgraph grimp --format=dot > "$dot_output"
+    grep -q 'digraph' "$dot_output"
+    # DOT format should not contain HTML tags
+    ! grep -q '<!DOCTYPE html>' "$dot_output"
+    echo "DOT format output: OK"
+
+    echo "Testing --force-console flag..."
+    uv run impulse drawgraph grimp --force-console > "$force_console_output"
+    grep -q '<!DOCTYPE html>' "$force_console_output"
+    echo "--force-console flag: OK"
+
+    echo "All output redirection tests passed!"
 
 
 # Run tests under all supported Python versions.

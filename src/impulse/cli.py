@@ -5,6 +5,7 @@ import sys
 
 from impulse.application import use_cases
 from impulse import adapters
+from impulse import ports
 import grimp
 
 
@@ -27,8 +28,32 @@ def main():
         "and display them as dashed lines."
     ),
 )
+@click.option(
+    "--format",
+    type=click.Choice(["html", "dot"]),
+    default="html",
+    help="Output format (default to html).",
+)
+@click.option("--force-console", is_flag=True, help="Force the use of the console output.")
 @click.argument("module_name", type=str)
-def drawgraph(module_name: str, show_import_totals: bool, show_cycle_breakers: bool) -> None:
+def drawgraph(
+    module_name: str,
+    show_import_totals: bool,
+    show_cycle_breakers: bool,
+    force_console: bool,
+    format: str,
+) -> None:
+    viewer: ports.GraphViewer
+    if format == "html":
+        if not force_console and sys.stdout.isatty():
+            # the output is not redirected to a file
+            viewer = adapters.BrowserGraphViewer()
+        else:
+            viewer = adapters.ConsoleGraphViewer()
+    elif format == "dot":
+        viewer = adapters.ConsoleDotViewer()
+    else:
+        raise ValueError(f"Invalid format: {format}")
     use_cases.draw_graph(
         module_name=module_name,
         show_import_totals=show_import_totals,
@@ -37,5 +62,5 @@ def drawgraph(module_name: str, show_import_totals: bool, show_cycle_breakers: b
         current_directory=os.getcwd(),
         get_top_level_package=adapters.get_top_level_package,
         build_graph=grimp.build_graph,
-        viewer=adapters.BrowserGraphViewer(),
+        viewer=viewer,
     )
