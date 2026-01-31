@@ -240,6 +240,9 @@ class TestDrawGraph:
             Edge("mypackage.foo.blue.beta", "mypackage.foo.green.gamma"),
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 39624fc (hide unlinked)
 
     def test_draw_graph_hide_unlinked(self):
         """Test that hide_unlinked=True removes nodes with no edges."""
@@ -309,5 +312,8 @@ class TestDrawGraph:
         assert viewer.called_with_dot.edges == {
             Edge("mypackage.foo.blue", "mypackage.foo.green"),
         }
+<<<<<<< HEAD
 =======
 >>>>>>> 6e23bb0 (depth)
+=======
+>>>>>>> 39624fc (hide unlinked)
