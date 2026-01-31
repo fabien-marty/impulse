@@ -35,6 +35,12 @@ def main():
     help="Output format (default to html).",
 )
 @click.option("--force-console", is_flag=True, help="Force the use of the console output.")
+@click.option(
+    "--depth",
+    type=int,
+    default=1,
+    help="Depth of submodules to include in the graph (default: 1 for direct children).",
+)
 @click.argument("module_name", type=str)
 def drawgraph(
     module_name: str,
@@ -42,6 +48,7 @@ def drawgraph(
     show_cycle_breakers: bool,
     force_console: bool,
     format: str,
+    depth: int,
 ) -> None:
     viewer: ports.GraphViewer
     if format == "html":
@@ -58,6 +65,7 @@ def drawgraph(
         module_name=module_name,
         show_import_totals=show_import_totals,
         show_cycle_breakers=show_cycle_breakers,
+        depth=depth,
         sys_path=sys.path,
         current_directory=os.getcwd(),
         get_top_level_package=adapters.get_top_level_package,
