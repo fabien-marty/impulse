@@ -1,5 +1,6 @@
 from collections.abc import Set
 from collections.abc import Callable
+import fnmatch
 import itertools
 import grimp
 from impulse import ports, dotfile
@@ -16,6 +17,7 @@ def draw_graph(
     viewer: ports.GraphViewer,
     depth: int = 1,
     hide_unlinked: bool = False,
+    hide_nodes_patterns: list[str] | None = None,
 ) -> None:
     """
     Create a file showing a graph of the supplied package.
@@ -32,6 +34,7 @@ def draw_graph(
         viewer: GraphViewer for generating the graph image and opening it.
         depth: the depth of submodules to include in the graph (default: 1 for direct children).
         hide_unlinked: whether to hide nodes that have no incoming or outgoing edges.
+        hide_nodes_patterns: list of fnmatch patterns to hide matching nodes.
     """
     # Add current directory to the path, as this doesn't happen automatically.
     sys_path.insert(0, current_directory)
@@ -40,7 +43,8 @@ def draw_graph(
     grimp_graph = build_graph(top_level_package)
 
     dot = _build_dot(
-        grimp_graph, module_name, show_import_totals, show_cycle_breakers, depth, hide_unlinked
+        grimp_graph, module_name, show_import_totals, show_cycle_breakers, depth, hide_unlinked,
+        hide_nodes_patterns=hide_nodes_patterns or [],
     )
 
     viewer.view(dot)
@@ -72,13 +76,47 @@ def _find_modules_up_to_depth(
     return all_modules
 
 
+def _should_hide_node(module: str, base_module: str, patterns: list[str]) -> bool:
+    """
+    Check if a module should be hidden based on fnmatch patterns.
+
+    Patterns are matched against the relative module name (without leading dot).
+    For example, if base_module is "mypackage.foo" and module is "mypackage.foo.bar.baz",
+    the relative name is "bar.baz" and patterns like "bar" or "bar.*" are matched against it.
+    """
+    if not patterns:
+        return False
+
+    # Get the relative module name (strip the base module prefix)
+    if module.startswith(base_module + "."):
+        relative = module[len(base_module) + 1:]  # Strip base module and the dot
+    else:
+        # Fallback: use just the last component
+        relative = module.split(".")[-1]
+
+    # Check if any pattern matches
+    for pattern in patterns:
+        if fnmatch.fnmatch(relative, pattern):
+            return True
+
+    return False
+
+
 class _DotGraphBuildStrategy:
-    def __init__(self, depth: int = 1, hide_unlinked: bool = False) -> None:
+    def __init__(self, depth: int = 1, hide_unlinked: bool = False, hide_nodes_patterns: list[str] | None = None) -> None:
         self.depth = depth
         self.hide_unlinked = hide_unlinked
+        self.hide_nodes_patterns = hide_nodes_patterns or []
 
     def build(self, module_name: str, grimp_graph: grimp.ImportGraph) -> dotfile.DotGraph:
         modules = _find_modules_up_to_depth(grimp_graph, module_name, self.depth)
+
+        # Filter out hidden nodes based on patterns
+        if self.hide_nodes_patterns:
+            modules = {
+                mod for mod in modules
+                if not _should_hide_node(mod, module_name, self.hide_nodes_patterns)
+            }
 
         self.prepare_graph(grimp_graph, modules)
 
@@ -124,8 +162,8 @@ class _DotGraphBuildStrategy:
 class _ModuleSquashingBuildStrategy(_DotGraphBuildStrategy):
     """Fast builder for when we don't need additional data about the imports."""
 
-    def __init__(self, depth: int = 1, hide_unlinked: bool = False) -> None:
-        super().__init__(depth=depth, hide_unlinked=hide_unlinked)
+    def __init__(self, depth: int = 1, hide_unlinked: bool = False, hide_nodes_patterns: list[str] | None = None) -> None:
+        super().__init__(depth=depth, hide_unlinked=hide_unlinked, hide_nodes_patterns=hide_nodes_patterns)
 
     def prepare_graph(self, grimp_graph: grimp.ImportGraph, modules: Set[str]) -> None:
         for mod in modules:
@@ -152,8 +190,9 @@ class _ImportExpressionBuildStrategy(_DotGraphBuildStrategy):
         show_cycle_breakers: bool,
         depth: int = 1,
         hide_unlinked: bool = False,
+        hide_nodes_patterns: list[str] | None = None,
     ) -> None:
-        super().__init__(depth=depth, hide_unlinked=hide_unlinked)
+        super().__init__(depth=depth, hide_unlinked=hide_unlinked, hide_nodes_patterns=hide_nodes_patterns)
         self.module_name = module_name
         self.show_import_totals = show_import_totals
         self.show_cycle_breakers = show_cycle_breakers
@@ -259,6 +298,7 @@ def _build_dot(
     show_cycle_breakers: bool,
     depth: int = 1,
     hide_unlinked: bool = False,
+    hide_nodes_patterns: list[str] | None = None,
 ) -> dotfile.DotGraph:
     strategy: _DotGraphBuildStrategy
     # Use ImportExpressionBuildStrategy when:
@@ -271,8 +311,9 @@ def _build_dot(
             show_cycle_breakers=show_cycle_breakers,
             depth=depth,
             hide_unlinked=hide_unlinked,
+            hide_nodes_patterns=hide_nodes_patterns,
         )
     else:
-        strategy = _ModuleSquashingBuildStrategy(depth=depth, hide_unlinked=hide_unlinked)
+        strategy = _ModuleSquashingBuildStrategy(depth=depth, hide_unlinked=hide_unlinked, hide_nodes_patterns=hide_nodes_patterns)
 
     return strategy.build(module_name, grimp_graph)
