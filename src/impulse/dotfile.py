@@ -10,7 +10,10 @@ class Edge:
     emphasized: bool = False
 
     def __str__(self) -> str:
-        return f'"{DotGraph.render_module(self.source)}" ->  "{DotGraph.render_module(self.destination)}"{self._render_attrs()}\n'
+        return self.render(base_module="")
+
+    def render(self, base_module: str) -> str:
+        return f'"{DotGraph.render_module(self.source, base_module)}" ->  "{DotGraph.render_module(self.destination, base_module)}"{self._render_attrs()}\n'
 
     def _render_attrs(self) -> str:
         attrs: dict[str, str] = {}
@@ -32,11 +35,12 @@ class DotGraph:
     https://en.wikipedia.org/wiki/DOT_(graph_description_language)
     """
 
-    def __init__(self, title: str, concentrate: bool = True) -> None:
+    def __init__(self, title: str, concentrate: bool = True, depth: int = 1) -> None:
         self.title = title
         self.nodes: set[str] = set()
         self.edges: set[Edge] = set()
         self.concentrate = concentrate
+        self.depth = depth
 
     def add_node(self, name: str) -> None:
         self.nodes.add(name)
@@ -54,12 +58,19 @@ class DotGraph:
         }}""")
 
     def _render_nodes(self) -> str:
-        return "\n".join(f'"{self.render_module(node)}"\n' for node in sorted(self.nodes))
+        return "\n".join(
+            f'"{self.render_module(node, self.title)}"\n' for node in sorted(self.nodes)
+        )
 
     def _render_edges(self) -> str:
-        return "\n".join(str(edge) for edge in sorted(self.edges))
+        return "\n".join(edge.render(self.title) for edge in sorted(self.edges))
 
     @staticmethod
-    def render_module(module: str) -> str:
-        # Render as relative module.
-        return f".{module.split('.')[-1]}"
+    def render_module(module: str, base_module: str = "") -> str:
+        # Render as relative module by stripping the base module prefix.
+        if base_module and module.startswith(base_module + "."):
+            relative = module[len(base_module) :]
+            return relative  # Already starts with "."
+        else:
+            # Fallback: show as relative with just the last component
+            return f".{module.split('.')[-1]}"
