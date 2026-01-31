@@ -15,7 +15,10 @@ def draw_graph(
     build_graph: Callable[[str], grimp.ImportGraph],
     viewer: ports.GraphViewer,
     depth: int = 1,
+<<<<<<< HEAD
     hide_unlinked: bool = False,
+=======
+>>>>>>> 6e23bb0 (depth)
 ) -> None:
     """
     Create a file showing a graph of the supplied package.
@@ -31,7 +34,10 @@ def draw_graph(
             (pass grimp.build_graph or a test double).
         viewer: GraphViewer for generating the graph image and opening it.
         depth: the depth of submodules to include in the graph (default: 1 for direct children).
+<<<<<<< HEAD
         hide_unlinked: whether to hide nodes that have no incoming or outgoing edges.
+=======
+>>>>>>> 6e23bb0 (depth)
     """
     # Add current directory to the path, as this doesn't happen automatically.
     sys_path.insert(0, current_directory)
@@ -39,9 +45,13 @@ def draw_graph(
     top_level_package = get_top_level_package(module_name)
     grimp_graph = build_graph(top_level_package)
 
+<<<<<<< HEAD
     dot = _build_dot(
         grimp_graph, module_name, show_import_totals, show_cycle_breakers, depth, hide_unlinked
     )
+=======
+    dot = _build_dot(grimp_graph, module_name, show_import_totals, show_cycle_breakers, depth)
+>>>>>>> 6e23bb0 (depth)
 
     viewer.view(dot)
 
@@ -73,9 +83,14 @@ def _find_modules_up_to_depth(
 
 
 class _DotGraphBuildStrategy:
+<<<<<<< HEAD
     def __init__(self, depth: int = 1, hide_unlinked: bool = False) -> None:
         self.depth = depth
         self.hide_unlinked = hide_unlinked
+=======
+    def __init__(self, depth: int = 1) -> None:
+        self.depth = depth
+>>>>>>> 6e23bb0 (depth)
 
     def build(self, module_name: str, grimp_graph: grimp.ImportGraph) -> dotfile.DotGraph:
         modules = _find_modules_up_to_depth(grimp_graph, module_name, self.depth)
@@ -85,9 +100,14 @@ class _DotGraphBuildStrategy:
         dot = dotfile.DotGraph(
             title=module_name, concentrate=self.should_concentrate(), depth=self.depth
         )
+<<<<<<< HEAD
 
         # Build edges first so we can determine which nodes are linked
         edges: list[dotfile.Edge] = []
+=======
+        for mod in modules:
+            dot.add_node(mod)
+>>>>>>> 6e23bb0 (depth)
         for upstream, downstream in itertools.permutations(modules, r=2):
             if edge := self.build_edge(grimp_graph, upstream, downstream):
                 edges.append(edge)
@@ -124,9 +144,12 @@ class _DotGraphBuildStrategy:
 class _ModuleSquashingBuildStrategy(_DotGraphBuildStrategy):
     """Fast builder for when we don't need additional data about the imports."""
 
+<<<<<<< HEAD
     def __init__(self, depth: int = 1, hide_unlinked: bool = False) -> None:
         super().__init__(depth=depth, hide_unlinked=hide_unlinked)
 
+=======
+>>>>>>> 6e23bb0 (depth)
     def prepare_graph(self, grimp_graph: grimp.ImportGraph, modules: Set[str]) -> None:
         for mod in modules:
             grimp_graph.squash_module(mod)
@@ -151,9 +174,14 @@ class _ImportExpressionBuildStrategy(_DotGraphBuildStrategy):
         show_import_totals: bool,
         show_cycle_breakers: bool,
         depth: int = 1,
+<<<<<<< HEAD
         hide_unlinked: bool = False,
     ) -> None:
         super().__init__(depth=depth, hide_unlinked=hide_unlinked)
+=======
+    ) -> None:
+        super().__init__(depth=depth)
+>>>>>>> 6e23bb0 (depth)
         self.module_name = module_name
         self.show_import_totals = show_import_totals
         self.show_cycle_breakers = show_cycle_breakers
@@ -258,7 +286,10 @@ def _build_dot(
     show_import_totals: bool,
     show_cycle_breakers: bool,
     depth: int = 1,
+<<<<<<< HEAD
     hide_unlinked: bool = False,
+=======
+>>>>>>> 6e23bb0 (depth)
 ) -> dotfile.DotGraph:
     strategy: _DotGraphBuildStrategy
     # Use ImportExpressionBuildStrategy when:
@@ -270,9 +301,15 @@ def _build_dot(
             show_import_totals=show_import_totals,
             show_cycle_breakers=show_cycle_breakers,
             depth=depth,
+<<<<<<< HEAD
             hide_unlinked=hide_unlinked,
         )
     else:
         strategy = _ModuleSquashingBuildStrategy(depth=depth, hide_unlinked=hide_unlinked)
+=======
+        )
+    else:
+        strategy = _ModuleSquashingBuildStrategy(depth=depth)
+>>>>>>> 6e23bb0 (depth)
 
     return strategy.build(module_name, grimp_graph)
