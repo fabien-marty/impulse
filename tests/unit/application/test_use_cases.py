@@ -239,3 +239,72 @@ class TestDrawGraph:
             Edge("mypackage.foo.blue.alpha", "mypackage.foo.green.gamma"),
             Edge("mypackage.foo.blue.beta", "mypackage.foo.green.gamma"),
         }
+
+    def test_draw_graph_hide_unlinked(self):
+        """Test that hide_unlinked=True removes nodes with no edges."""
+        viewer = SpyGraphViewer()
+
+        use_cases.draw_graph(
+            SOME_MODULE,
+            show_import_totals=False,
+            show_cycle_breakers=False,
+            sys_path=[],
+            current_directory="/cwd",
+            get_top_level_package=fake_get_top_level_package_non_namespace,
+            build_graph=build_fake_graph,
+            viewer=viewer,
+            hide_unlinked=True,
+        )
+
+        # The default graph has blue, green, yellow, red nodes
+        # yellow has no direct edges (only green -> yellow), but it IS connected
+        # All four nodes are connected in the test graph, so all should remain
+        assert viewer.called_with_dot.nodes == {
+            "mypackage.foo.green",
+            "mypackage.foo.blue",
+            "mypackage.foo.yellow",
+            "mypackage.foo.red",
+        }
+
+    def test_draw_graph_hide_unlinked_removes_isolated_nodes(self):
+        """Test that hide_unlinked=True removes truly isolated nodes."""
+
+        def build_graph_with_isolated(package_name: str) -> grimp.ImportGraph:
+            graph = grimp.ImportGraph()
+            graph.add_module(package_name)
+            graph.add_module(SOME_MODULE)
+
+            # Create some children, one of which is isolated
+            for child in ("blue", "green", "isolated"):
+                graph.add_module(f"{SOME_MODULE}.{child}")
+
+            # Only blue and green are connected
+            graph.add_import(
+                importer=f"{SOME_MODULE}.blue",
+                imported=f"{SOME_MODULE}.green",
+            )
+            # "isolated" has no imports
+            return graph
+
+        viewer = SpyGraphViewer()
+
+        use_cases.draw_graph(
+            SOME_MODULE,
+            show_import_totals=False,
+            show_cycle_breakers=False,
+            sys_path=[],
+            current_directory="/cwd",
+            get_top_level_package=fake_get_top_level_package_non_namespace,
+            build_graph=build_graph_with_isolated,
+            viewer=viewer,
+            hide_unlinked=True,
+        )
+
+        # Only blue and green should remain; isolated should be filtered out
+        assert viewer.called_with_dot.nodes == {
+            "mypackage.foo.blue",
+            "mypackage.foo.green",
+        }
+        assert viewer.called_with_dot.edges == {
+            Edge("mypackage.foo.blue", "mypackage.foo.green"),
+        }

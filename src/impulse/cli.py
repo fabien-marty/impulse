@@ -36,6 +36,11 @@ def main():
 )
 @click.option("--force-console", is_flag=True, help="Force the use of the console output.")
 @click.option(
+    "--hide-unlinked",
+    is_flag=True,
+    help="Hide nodes that have no incoming or outgoing edges.",
+)
+@click.option(
     "--depth",
     type=int,
     default=1,
@@ -48,6 +53,7 @@ def drawgraph(
     show_cycle_breakers: bool,
     force_console: bool,
     format: str,
+    hide_unlinked: bool,
     depth: int,
 ) -> None:
     viewer: ports.GraphViewer
@@ -65,6 +71,7 @@ def drawgraph(
         module_name=module_name,
         show_import_totals=show_import_totals,
         show_cycle_breakers=show_cycle_breakers,
+        hide_unlinked=hide_unlinked,
         depth=depth,
         sys_path=sys.path,
         current_directory=os.getcwd(),
